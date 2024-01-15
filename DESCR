@@ -1,0 +1,2 @@
+The Microsoft Azure Linux Agent (waagent) manages Linux provisioning and VM
+interaction with the Azure Fabric Controller.

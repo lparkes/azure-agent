@@ -1,0 +1,23 @@
+$NetBSD$
+
+Add NetBSD support
+
+--- /dev/null	2023-11-23 15:42:54.723929298 +0000
++++ /usr/work/obj/pkgsrc/sysutils/azure-agent/work./WALinuxAgent-2.9.1.1/init/netbsd/waagent	2023-11-23 15:45:20.257678098 +0000
+@@ -0,0 +1,16 @@
++#!/bin/sh
++
++# PROVIDE: waagent
++# REQUIRE: sshd dhcpcd
++
++. /etc/rc.subr
++
++name="waagent"
++rcvar="waagent_enable"
++pidfile="/var/run/waagent.pid"
++command="%PREFIX%/sbin/${name}"
++command_interpreter="python"
++command_args="start"
++
++load_rc_config $name
++run_rc_command "$1"

@@ -1,0 +1,16 @@
+$NetBSD$
+
+BLAKE2s (2.9.1.1.tar.gz) = d89b91fb9b60c76ef23e2a59f50901ea418a277b456eaf76502c516172af2192
+SHA512 (2.9.1.1.tar.gz) = 3f44aecc16ac545db4b550586f168dbbdef34289aad6775973517bf645e5a1d486864c01e974f03a71b3e946c14e1ca140673a75c1cd602aac28725eaa68e83d
+Size (2.9.1.1.tar.gz) = 1986486 bytes
+SHA1 (patch-azurelinuxagent_common_osutil_default.py) = f86171639574c5c218e0ade7fd495544e3820ddd
+SHA1 (patch-azurelinuxagent_common_osutil_factory.py) = 56c0bb2d4e3bceb9118f325fe25fd31bde45bb37
+SHA1 (patch-azurelinuxagent_common_osutil_netbsd.py) = 7e32bffac59403d6dfcb4c51b4932f2aa44a5aa8
+SHA1 (patch-azurelinuxagent_common_version.py) = 5df78aa8bd3a83f15535a6969b66723445b4acfc
+SHA1 (patch-azurelinuxagent_daemon_resourcedisk_factory.py) = 9fa171c5eb72f73e2a5ec2af08eebaf9cc28ee4a
+SHA1 (patch-azurelinuxagent_daemon_resourcedisk_netbsd.py) = 6ff4761e4aca3adebafbe624eb39c680a3efe893
+SHA1 (patch-azurelinuxagent_pa_deprovision_default.py) = 203e71fb1c1391c0caccc9d29aadf457b262d3fe
+SHA1 (patch-bin_waagent2.0) = 57a400fe7c5268d5c49e523a8b56d70d55f5bff8
+SHA1 (patch-config_netbsd_waagent.conf) = 26b65416a4d0cf4bf1daf4996c310f99c6ee8ac5
+SHA1 (patch-init_netbsd_waagent) = ee1a765baeb53d3227becadc58bad017db240929
+SHA1 (patch-setup.py) = c17dbcdeefa8d9a7fb15dba7e1744505a0b486a0

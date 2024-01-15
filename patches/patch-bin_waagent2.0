@@ -1,0 +1,43 @@
+$NetBSD$
+
+Add NetBSD support
+
+--- bin/waagent2.0.orig	2023-11-23 16:16:01.860669897 +0000
++++ bin/waagent2.0	2023-11-23 16:18:10.179359797 +0000
+@@ -179,15 +179,15 @@
+         self.requiredDeps = [ 'route', 'shutdown', 'ssh-keygen', 'useradd', 'usermod',
+                               'openssl', 'sfdisk', 'fdisk', 'mkfs', 
+                               'sed', 'grep', 'sudo', 'parted' ]
+-        self.init_script_file='/etc/init.d/waagent'
++        self.init_script_file='/etc/rc.d/waagent'
+         self.agent_package_name='WALinuxAgent'
+         self.fileBlackList = [ "/root/.bash_history", "/var/log/waagent.log",'/etc/resolv.conf' ]        
+-        self.agent_files_to_uninstall = ["/etc/waagent.conf", "/etc/logrotate.d/waagent"]
++        self.agent_files_to_uninstall = ["/etc/logrotate.d/waagent"]
+         self.grubKernelBootOptionsFile = '/etc/default/grub'
+         self.grubKernelBootOptionsLine = 'GRUB_CMDLINE_LINUX_DEFAULT='
+         self.getpidcmd = 'pidof'
+         self.mount_dvd_cmd = 'mount'
+-        self.sudoers_dir_base = '/etc'
++        self.sudoers_dir_base = '@PKGSYSCONFDIR@'
+         self.waagent_conf_file = WaagentConf
+         self.shadow_file_mode=0600
+         self.shadow_file_path="/etc/shadow"
+@@ -445,7 +445,7 @@
+         """
+         if not os.path.exists(buildroot+'/etc'):
+             os.mkdir(buildroot+'/etc')
+-        SetFileContents(buildroot+'/etc/waagent.conf', MyDistro.waagent_conf_file)
++        SetFileContents(buildroot+'@PKG_SYSCONFDIR@/waagent.conf', MyDistro.waagent_conf_file)
+         
+         if not os.path.exists(buildroot+'/etc/logrotate.d'):
+             os.mkdir(buildroot+'/etc/logrotate.d')
+@@ -653,7 +653,7 @@
+         return data
+ 
+     def getConfigurationPath(self):
+-        return "/etc/waagent.conf"
++        return "@PKG_SYSCONFDIR@/waagent.conf"
+     
+     def getProcessorCores(self):
+         return int(RunGetOutput("grep 'processor.*:' /proc/cpuinfo |wc -l")[1])
