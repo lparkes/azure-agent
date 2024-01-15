@@ -1,10 +1,8 @@
 $NetBSD$
 
-Add NetBSD support
-
---- /dev/null	2023-11-23 15:24:26.116493398 +0000
-+++ azurelinuxagent/common/osutil/netbsd.py	2023-11-23 15:25:16.602650798 +0000
-@@ -0,0 +1,324 @@
+--- azurelinuxagent/common/osutil/netbsd.py.orig	2024-01-15 22:03:12.698119894 +0000
++++ azurelinuxagent/common/osutil/netbsd.py
+@@ -0,0 +1,329 @@
 +# Microsoft Azure Linux Agent
 +#
 +# Copyright 2018 Microsoft Corporation
@@ -122,6 +120,11 @@ Add NetBSD support
 +        if ret == 0:
 +            return False
 +        return True
++
++    # Getting the value of open 245 out of the dhcpcd lease file is a
++    # touch tricky. This is all completely optional anyway.
++    def is_dhcp_available(self):
++        return False
 +
 +    def is_dhcp_enabled(self):
 +        pass
@@ -298,7 +301,7 @@ Add NetBSD support
 +        mac = ''
 +
 +        ret, output = shellutil.run_get_output(
-+            'ifconfig hvn | grep -E "^hvn.:" | sed "s/:.*//g"', chk_err=False)
++            'ifconfig | grep -E "^hvn.:" | sed "s/:.*//g"', chk_err=False)
 +        if ret:
 +            raise OSUtilError("Can't find ether interface:{0}".format(output))
 +        ifaces = output.split()
@@ -314,7 +317,7 @@ Add NetBSD support
 +        for line in output.split('\n'):
 +            if line.find('inet ') != -1:
 +                inet = line.split()[1]
-+            elif line.find('lladdr ') != -1:
++            elif line.find('address: ') != -1:
 +                mac = line.split()[1]
 +        logger.verbose("Interface info: ({0},{1},{2})", iface, inet, mac)
 +
