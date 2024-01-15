@@ -35,6 +35,7 @@ INSTALLATION_DIRS=	sbin ${PYSITELIB} ${EGDIR}
 pre-patch:
 	${MKDIR} ${WRKSRC}/config/netbsd \
 	    ${WRKSRC}/init/netbsd
+	${CP} ${FILESDIR}/waagent.sh ${WRKSRC}/init/netbsd/waagent
 
 post-install:
 	${INSTALL_DATA} ${WRKSRC}/config/netbsd/waagent.conf	 \
