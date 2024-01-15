@@ -1,0 +1,11 @@
+Re-enable DHCP. This will require us to implement either parsing of
+the leases file, output of option 245 from "dhcpcd -U IFACE" and/or
+the DHCP service management functions.
+
+Fixup the requirement for /etc/openssl/openssl.cnf. The "openssl req"
+command needs that file and we don't have it. We should be able to set
+OPENSSL_CONF or OPENSSL_CONFIG to /dev/null in the environment.
+
+Tidy up the MAC address learning code to use "ifconfig -lb".
+
+Everything else.
