@@ -1,0 +1,4 @@
+The is a temporary location for the NetBSD port of the Microsoft Azure
+Linux VM Agent (waagent) while I do as much work as possible to get it
+ready for adding to pkgsrc.
+
