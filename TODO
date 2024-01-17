@@ -1,6 +1,4 @@
-Re-enable DHCP. This will require us to implement either parsing of
-the leases file, output of option 245 from "dhcpcd -U IFACE" and/or
-the DHCP service management functions.
+Implement output of option 245 from "dhcpcd -U IFACE".
 
 Fixup the requirement for /etc/openssl/openssl.cnf. The "openssl req"
 command needs that file and we don't have it. We should be able to set

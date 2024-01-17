@@ -1,8 +1,8 @@
 $NetBSD$
 
---- azurelinuxagent/common/osutil/netbsd.py.orig	2024-01-15 22:03:12.698119894 +0000
+--- azurelinuxagent/common/osutil/netbsd.py.orig	2024-01-17 18:13:53.115220799 +0000
 +++ azurelinuxagent/common/osutil/netbsd.py
-@@ -0,0 +1,329 @@
+@@ -0,0 +1,335 @@
 +# Microsoft Azure Linux Agent
 +#
 +# Copyright 2018 Microsoft Corporation
@@ -121,80 +121,86 @@ $NetBSD$
 +            return False
 +        return True
 +
-+    # Getting the value of open 245 out of the dhcpcd lease file is a
-+    # touch tricky. This is all completely optional anyway.
-+    def is_dhcp_available(self):
-+        return False
-+
 +    def is_dhcp_enabled(self):
-+        pass
++        """
++        Returns True if the DHCP client service is running.
++        """
++        dhcpcd = shellutil.run_command(["sh", "-c", ". /etc/rc.conf ; echo $dhcpcd"])
++        return dhcpcd == "YES\n"
 +
 +    def start_dhcp_service(self):
-+        pass
++        """
++        Start the DHCP client service assuming it is enabled.
++        """
++        shellutil.run_command(["/etc/rc.d/dhcpcd", "start"])
 +
 +    def stop_dhcp_service(self):
-+        pass
-+
-+    def get_dhcp_lease_endpoint(self):
 +        """
-+        NetBSD has a slightly different lease file format.
++        Stop the DHCP client service assuming it is enabled.
 +        """
-+        endpoint = None
-+        pathglob = '/var/db/dhclient.leases.{}'.format(self.get_first_if()[0])
++        shellutil.run_command(["/etc/rc.d/dhcpcd", "stop"])
 +
-+        HEADER_LEASE = "lease"
-+        HEADER_OPTION = "option option-245"
-+        HEADER_EXPIRE = "expire"
-+        FOOTER_LEASE = "}"
-+        FORMAT_DATETIME = "%Y/%m/%d %H:%M:%S %Z"
++    # This will eventually run "dhcpcd -U IFACE"
++    # def get_dhcp_lease_endpoint(self):
++    #     """
++    #     NetBSD has a slightly different lease file format.
++    #     """
++    #     endpoint = None
++    #     pathglob = '/var/db/dhclient.leases.{}'.format(self.get_first_if()[0])
 +
-+        logger.info("looking for leases in path [{0}]".format(pathglob))
-+        for lease_file in glob.glob(pathglob):
-+            leases = open(lease_file).read()
-+            if HEADER_OPTION in leases:
-+                cached_endpoint = None
-+                has_option_245 = False
-+                expired = True  # assume expired
-+                for line in leases.splitlines():
-+                    if line.startswith(HEADER_LEASE):
-+                        cached_endpoint = None
-+                        has_option_245 = False
-+                        expired = True
-+                    elif HEADER_OPTION in line:
-+                        try:
-+                            ipaddr = line.split(" ")[-1].strip(";").split(":")
-+                            cached_endpoint = \
-+                               ".".join(str(int(d, 16)) for d in ipaddr)
-+                            has_option_245 = True
-+                        except ValueError:
-+                            logger.error("could not parse '{0}'".format(line))
-+                    elif HEADER_EXPIRE in line:
-+                        if "never" in line:
-+                            expired = False
-+                        else:
-+                            try:
-+                                expire_string = line.split(
-+                                    " ", 4)[-1].strip(";")
-+                                expire_date = datetime.datetime.strptime(
-+                                    expire_string, FORMAT_DATETIME)
-+                                if expire_date > datetime.datetime.utcnow():
-+                                    expired = False
-+                            except ValueError:
-+                                logger.error("could not parse expiry token "
-+                                             "'{0}'".format(line))
-+                    elif FOOTER_LEASE in line:
-+                        logger.info("dhcp entry:{0}, 245:{1}, expired: {2}"
-+                                    .format(cached_endpoint, has_option_245, expired))
-+                        if not expired and cached_endpoint is not None and has_option_245:
-+                            endpoint = cached_endpoint
-+                            logger.info("found endpoint [{0}]".format(endpoint))
-+                            # we want to return the last valid entry, so
-+                            # keep searching
-+        if endpoint is not None:
-+            logger.info("cached endpoint found [{0}]".format(endpoint))
-+        else:
-+            logger.info("cached endpoint not found")
-+        return endpoint
++    #     HEADER_LEASE = "lease"
++    #     HEADER_OPTION = "option option-245"
++    #     HEADER_EXPIRE = "expire"
++    #     FOOTER_LEASE = "}"
++    #     FORMAT_DATETIME = "%Y/%m/%d %H:%M:%S %Z"
++
++    #     logger.info("looking for leases in path [{0}]".format(pathglob))
++    #     for lease_file in glob.glob(pathglob):
++    #         leases = open(lease_file).read()
++    #         if HEADER_OPTION in leases:
++    #             cached_endpoint = None
++    #             has_option_245 = False
++    #             expired = True  # assume expired
++    #             for line in leases.splitlines():
++    #                 if line.startswith(HEADER_LEASE):
++    #                     cached_endpoint = None
++    #                     has_option_245 = False
++    #                     expired = True
++    #                 elif HEADER_OPTION in line:
++    #                     try:
++    #                         ipaddr = line.split(" ")[-1].strip(";").split(":")
++    #                         cached_endpoint = \
++    #                            ".".join(str(int(d, 16)) for d in ipaddr)
++    #                         has_option_245 = True
++    #                     except ValueError:
++    #                         logger.error("could not parse '{0}'".format(line))
++    #                 elif HEADER_EXPIRE in line:
++    #                     if "never" in line:
++    #                         expired = False
++    #                     else:
++    #                         try:
++    #                             expire_string = line.split(
++    #                                 " ", 4)[-1].strip(";")
++    #                             expire_date = datetime.datetime.strptime(
++    #                                 expire_string, FORMAT_DATETIME)
++    #                             if expire_date > datetime.datetime.utcnow():
++    #                                 expired = False
++    #                         except ValueError:
++    #                             logger.error("could not parse expiry token "
++    #                                          "'{0}'".format(line))
++    #                 elif FOOTER_LEASE in line:
++    #                     logger.info("dhcp entry:{0}, 245:{1}, expired: {2}"
++    #                                 .format(cached_endpoint, has_option_245, expired))
++    #                     if not expired and cached_endpoint is not None and has_option_245:
++    #                         endpoint = cached_endpoint
++    #                         logger.info("found endpoint [{0}]".format(endpoint))
++    #                         # we want to return the last valid entry, so
++    #                         # keep searching
++    #     if endpoint is not None:
++    #         logger.info("cached endpoint found [{0}]".format(endpoint))
++    #     else:
++    #         logger.info("cached endpoint not found")
++    #     return endpoint
 +
 +    def allow_dhcp_broadcast(self):
 +        pass
