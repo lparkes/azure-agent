@@ -1,8 +1,8 @@
 $NetBSD$
 
---- azurelinuxagent/common/osutil/netbsd.py.orig	2024-01-17 18:13:53.115220799 +0000
+--- azurelinuxagent/common/osutil/netbsd.py.orig	2024-01-27 21:38:57.582385297 +0000
 +++ azurelinuxagent/common/osutil/netbsd.py
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,294 @@
 +# Microsoft Azure Linux Agent
 +#
 +# Copyright 2018 Microsoft Corporation
@@ -54,7 +54,8 @@ $NetBSD$
 +        return "/usr/pkg/sbin"
 +
 +    def get_instance_id(self):
-+        ret, output = shellutil.run_get_output("sysctl -n hw.uuid")
++        # This value matches the Azure vmId field for the vm.
++        ret, output = shellutil.run_get_output("sysctl -n machdep.dmi.system-uuid")
 +        if ret != 0 or UUID_PATTERN.match(output) is None:
 +            return ""
 +        return output.strip()
@@ -132,7 +133,9 @@ $NetBSD$
 +        """
 +        Start the DHCP client service assuming it is enabled.
 +        """
-+        shellutil.run_command(["/etc/rc.d/dhcpcd", "start"])
++        # dhcpcd holds stdout and stderr open and so our default
++        # behaviour of waiting for the pipes to be closed won't work.
++        shellutil.run_command(["/etc/rc.d/dhcpcd", "start"], stdout=None, stderr=None)
 +
 +    def stop_dhcp_service(self):
 +        """
@@ -140,67 +143,22 @@ $NetBSD$
 +        """
 +        shellutil.run_command(["/etc/rc.d/dhcpcd", "stop"])
 +
-+    # This will eventually run "dhcpcd -U IFACE"
-+    # def get_dhcp_lease_endpoint(self):
-+    #     """
-+    #     NetBSD has a slightly different lease file format.
-+    #     """
-+    #     endpoint = None
-+    #     pathglob = '/var/db/dhclient.leases.{}'.format(self.get_first_if()[0])
-+
-+    #     HEADER_LEASE = "lease"
-+    #     HEADER_OPTION = "option option-245"
-+    #     HEADER_EXPIRE = "expire"
-+    #     FOOTER_LEASE = "}"
-+    #     FORMAT_DATETIME = "%Y/%m/%d %H:%M:%S %Z"
-+
-+    #     logger.info("looking for leases in path [{0}]".format(pathglob))
-+    #     for lease_file in glob.glob(pathglob):
-+    #         leases = open(lease_file).read()
-+    #         if HEADER_OPTION in leases:
-+    #             cached_endpoint = None
-+    #             has_option_245 = False
-+    #             expired = True  # assume expired
-+    #             for line in leases.splitlines():
-+    #                 if line.startswith(HEADER_LEASE):
-+    #                     cached_endpoint = None
-+    #                     has_option_245 = False
-+    #                     expired = True
-+    #                 elif HEADER_OPTION in line:
-+    #                     try:
-+    #                         ipaddr = line.split(" ")[-1].strip(";").split(":")
-+    #                         cached_endpoint = \
-+    #                            ".".join(str(int(d, 16)) for d in ipaddr)
-+    #                         has_option_245 = True
-+    #                     except ValueError:
-+    #                         logger.error("could not parse '{0}'".format(line))
-+    #                 elif HEADER_EXPIRE in line:
-+    #                     if "never" in line:
-+    #                         expired = False
-+    #                     else:
-+    #                         try:
-+    #                             expire_string = line.split(
-+    #                                 " ", 4)[-1].strip(";")
-+    #                             expire_date = datetime.datetime.strptime(
-+    #                                 expire_string, FORMAT_DATETIME)
-+    #                             if expire_date > datetime.datetime.utcnow():
-+    #                                 expired = False
-+    #                         except ValueError:
-+    #                             logger.error("could not parse expiry token "
-+    #                                          "'{0}'".format(line))
-+    #                 elif FOOTER_LEASE in line:
-+    #                     logger.info("dhcp entry:{0}, 245:{1}, expired: {2}"
-+    #                                 .format(cached_endpoint, has_option_245, expired))
-+    #                     if not expired and cached_endpoint is not None and has_option_245:
-+    #                         endpoint = cached_endpoint
-+    #                         logger.info("found endpoint [{0}]".format(endpoint))
-+    #                         # we want to return the last valid entry, so
-+    #                         # keep searching
-+    #     if endpoint is not None:
-+    #         logger.info("cached endpoint found [{0}]".format(endpoint))
-+    #     else:
-+    #         logger.info("cached endpoint not found")
-+    #     return endpoint
++    def get_dhcp_lease_endpoint(self):
++        """
++        Extract the Azure endpoint from the DHCP lease.
++        """
++        logger.info('Getting endpoint from dhcpcd -U')
++        cmd = 'dhcpcd -U {} | grep azureendpoint'.format(self.get_first_if()[0])
++        status, output = shellutil.run_get_output(cmd, chk_err=True)
++        if status == 0:
++            ipaddr = output.split("=")[-1].strip()
++            logger.info('Found endpoint IP address {} from dhcpcd'.format(ipaddr))
++            return ipaddr
++        else:
++            logger.warn('Azure endpoint was not found in the output from dhcpcd -U')
++            logger.warn('Make sure dhcpcd is being started with the -w flag')
++            logger.warn('Make sure dhcpcd understands the Azure endpoint option')
++            return None
 +
 +    def allow_dhcp_broadcast(self):
 +        pass
@@ -213,8 +171,9 @@ $NetBSD$
 +        shellutil.run("route delete 255.255.255.255 -iface "
 +                      "{0}".format(ifname), chk_err=False)
 +
++    # get_dhcp_pid is used to monitor for DHCP client restarts
 +    def get_dhcp_pid(self):
-+        return self._get_dhcp_pid(["pgrep", "-n", "dhclient"])
++        return self._get_dhcp_pid(["cat", "/var/run/dhcpcd/pid"])
 +
 +    def get_dvd_device(self, dev_dir='/dev'):
 +        pattern = r'cd[0-9]c'
